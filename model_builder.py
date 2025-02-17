@@ -6,13 +6,13 @@ class NetworkBuilder:
     def __init__(self, input_size, layer_configs, output_size, global_activation="relu"):
         """
         input_size: dimension d'entrée (int)
-        layer_configs: liste de dictionnaires, chacun définissant une couche avec les clés :
-            - "layer_type" : "Dense" ou "Convolution"
-            - "units" : nombre d'unités ou de filtres (int)
-            - "kernel_size" : taille du kernel (int) (pour les couches de type Convolution)
-            - "activation" : fonction d'activation (str)
+        layer_configs: liste de dictionnaires définissant chaque couche avec :
+            - "layer_type": "Dense" ou "Convolution"
+            - "units": nombre d'unités ou de filtres (int)
+            - "kernel_size": taille du kernel (int) pour Convolution, sinon None
+            - "activation": fonction d'activation (str)
         output_size: dimension de sortie (int)
-        global_activation: activation par défaut à utiliser (str)
+        global_activation: activation par défaut (str)
         """
         self.input_size = input_size
         self.layer_configs = layer_configs
@@ -31,8 +31,8 @@ class NetworkBuilder:
                 layers.append(self._get_activation(activation))
                 in_features = units
             elif layer_type.lower() == "convolution":
-                # Pour simplifier, ici nous simulons une couche convolutionnelle par une couche linéaire.
-                # Dans une implémentation réelle, il faudrait gérer les dimensions 2D, strides, padding, etc.
+                # Pour simplifier, nous utilisons nn.Linear pour simuler une couche conv.
+                # Dans une implémentation réelle, utilisez nn.Conv2d avec gestion des dimensions.
                 layers.append(nn.Linear(in_features, units))
                 layers.append(self._get_activation(activation))
                 in_features = units
@@ -49,7 +49,7 @@ class NetworkBuilder:
         elif activation.lower() == "sigmoid":
             return nn.Sigmoid()
         else:
-            return nn.ReLU()  # activation par défaut
+            return nn.ReLU()
 
 def detect_gpu():
     if torch.cuda.is_available():

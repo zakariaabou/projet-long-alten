@@ -1,13 +1,13 @@
 # controller.py
 import threading
+import torch
 from model_builder import NetworkBuilder
 from train_manager import Trainer
-import torch
 
 class GANController:
     def __init__(self, gen_config, disc_config, training_config):
         """
-        gen_config: dictionnaire contenant les paramètres du générateur, par exemple :
+        gen_config: dict contenant la configuration du générateur, par exemple :
             {
                 "input_size": 100,
                 "layers": [ 
@@ -17,16 +17,8 @@ class GANController:
                 "output_size": 64,
                 "global_activation": "relu"
             }
-        disc_config: dictionnaire similaire pour le discriminateur, par exemple :
-            {
-                "input_size": 64,
-                "layers": [ 
-                    {"layer_type": "Dense", "units": 128, "kernel_size": None, "activation": "relu"}
-                ],
-                "output_size": 1,
-                "global_activation": "relu"
-            }
-        training_config: dictionnaire avec les paramètres d'entraînement, par exemple :
+        disc_config: dict similaire pour le discriminateur.
+        training_config: dict avec les paramètres d'entraînement, par exemple :
             {
                 "learning_rate": 0.001,
                 "epochs": 10,
@@ -39,10 +31,8 @@ class GANController:
         self.disc_config = disc_config
         self.training_config = training_config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # Construction des modèles
         self.generator = self.build_generator()
         self.discriminator = self.build_discriminator()
-        # Création du Trainer
         self.trainer = Trainer(self.generator, self.discriminator, device=self.device)
         self.update_learning_rates(training_config.get("learning_rate", 0.001))
         self.trainer.current_network = training_config.get("initial_network", "generator")

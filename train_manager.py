@@ -14,18 +14,14 @@ class Trainer:
         self.discriminator.to(self.device)
         self.running = False
         self.pause_event = threading.Event()
-        self.pause_event.set()  # pas de pause au départ
-        self.current_network = "generator"  # ou "discriminator"
+        self.pause_event.set()  # pas de pause au début
+        self.current_network = "generator"  # peut être "generator" ou "discriminator"
         self.gen_optimizer = optim.Adam(self.generator.parameters(), lr=0.001)
         self.disc_optimizer = optim.Adam(self.discriminator.parameters(), lr=0.001)
-        self.loss_fn = nn.BCELoss()  # exemple avec une loss binaire
+        self.loss_fn = nn.BCELoss()  # Exemple avec une loss binaire
         self.epoch = 0
 
     def train(self, epochs, batch_size, callback=None):
-        """
-        Entraîne le GAN pendant un certain nombre d'epochs.
-        Le callback (si fourni) reçoit un message de mise à jour à chaque epoch.
-        """
         self.running = True
         for epoch in range(1, epochs + 1):
             if not self.running:
@@ -33,27 +29,25 @@ class Trainer:
             self.epoch = epoch
             # Attente en cas de pause
             self.pause_event.wait()
-
-            # Simulation d'une itération d'entraînement avec un batch
-            noise = torch.randn(batch_size, 100).to(self.device)  # vecteur latent
-            real_data = torch.randn(batch_size, self.generator[-1].out_features).to(self.device)  # données réelles fictives
-
+            
+            # Simulation d'une itération d'entraînement
+            noise = torch.randn(batch_size, 100).to(self.device)
+            # Simulation de données réelles fictives
+            real_data = torch.randn(batch_size, self.generator[-1].out_features).to(self.device)
+            
             if self.current_network == "discriminator":
-                # Entraîner le discriminateur
                 self._freeze(self.generator, True)
                 self._freeze(self.discriminator, False)
                 fake_data = self.generator(noise).detach()
                 loss_disc = self._train_discriminator(real_data, fake_data)
                 msg = f"Epoch {epoch}: Discriminateur Loss = {loss_disc:.4f}"
             else:
-                # Entraîner le générateur
                 self._freeze(self.discriminator, True)
                 self._freeze(self.generator, False)
                 loss_gen = self._train_generator(noise)
                 msg = f"Epoch {epoch}: Générateur Loss = {loss_gen:.4f}"
-
-            # Pause simulée (pour visualiser l'évolution)
-            time.sleep(0.5)
+            
+            time.sleep(0.5)  # pause pour simuler le temps d'entraînement
             if callback:
                 callback(msg)
         self.running = False
@@ -95,7 +89,6 @@ class Trainer:
         self.running = False
 
     def switch(self):
-        # Permet de basculer l'entraînement du générateur vers le discriminateur et inversement
         if self.current_network == "generator":
             self.current_network = "discriminator"
         else:
