@@ -58,7 +58,7 @@ class GanConfigurator:
         activation_frame = ttk.Frame(frame)
         activation_frame.pack(pady=5)
         ttk.Label(activation_frame, text="Activation globale (optionnel) :").pack(side="left")
-        self.gen_global_activation = ttk.Combobox(activation_frame, values=["relu", "tanh", "sigmoid"], width=10)
+        self.gen_global_activation = ttk.Combobox(activation_frame, values=["relu", "tanh", "sigmoid", "softmax", "leakyrelu"], width=10)
         self.gen_global_activation.set("relu")
         self.gen_global_activation.pack(side="left", padx=5)
         
@@ -70,14 +70,14 @@ class GanConfigurator:
     def add_gen_layer(self):
         row_frame = ttk.Frame(self.gen_layers_container)
         row_frame.pack(fill="x", pady=2)
-        layer_type_cb = ttk.Combobox(row_frame, values=["Dense", "Convolution"], width=13)
+        layer_type_cb = ttk.Combobox(row_frame, values=["Dense", "Convolution", "transposed_conv", "unflatten", "flatten", "dropout", "batchnorm", "maxpool", "avgpool"], width=13)
         layer_type_cb.set("Dense")
         layer_type_cb.grid(row=0, column=0, padx=5)
         units_entry = ttk.Entry(row_frame, width=15)
         units_entry.grid(row=0, column=1, padx=5)
         kernel_entry = ttk.Entry(row_frame, width=15)
         kernel_entry.grid(row=0, column=2, padx=5)
-        activation_cb = ttk.Combobox(row_frame, values=["relu", "tanh", "sigmoid"], width=13)
+        activation_cb = ttk.Combobox(row_frame, values=["relu", "tanh", "sigmoid", "softmax", "leakyrelu"], width=13)
         activation_cb.set("relu")
         activation_cb.grid(row=0, column=3, padx=5)
         remove_btn = ttk.Button(row_frame, text="Supprimer", command=lambda: self.remove_gen_layer(row_frame))
@@ -96,7 +96,7 @@ class GanConfigurator:
         for (_, layer_type_cb, units_entry, kernel_entry, activation_cb) in self.gen_layer_rows:
             layer_type = layer_type_cb.get()
             units = units_entry.get()
-            kernel = kernel_entry.get() if layer_type == "Convolution" else "N/A"
+            kernel = kernel_entry.get() # if layer_type == "Convolution" else "N/A"
             layer_activation = activation_cb.get()
             summary += f"- {layer_type}: Units/Filters = {units}, Kernel Size = {kernel}, Activation = {layer_activation}\n"
         global_act = self.gen_global_activation.get()
@@ -126,7 +126,7 @@ class GanConfigurator:
         activation_frame = ttk.Frame(frame)
         activation_frame.pack(pady=5)
         ttk.Label(activation_frame, text="Activation globale (optionnel) :").pack(side="left")
-        self.disc_global_activation = ttk.Combobox(activation_frame, values=["relu", "tanh", "sigmoid"], width=10)
+        self.disc_global_activation = ttk.Combobox(activation_frame, values=["relu", "tanh", "sigmoid", "softmax", "leakyrelu"], width=10)
         self.disc_global_activation.set("relu")
         self.disc_global_activation.pack(side="left", padx=5)
         
@@ -138,14 +138,14 @@ class GanConfigurator:
     def add_disc_layer(self):
         row_frame = ttk.Frame(self.disc_layers_container)
         row_frame.pack(fill="x", pady=2)
-        layer_type_cb = ttk.Combobox(row_frame, values=["Dense", "Convolution"], width=13)
+        layer_type_cb = ttk.Combobox(row_frame, values=["Dense", "Convolution", "transposed_conv", "unflatten", "flatten", "dropout", "batchnorm", "maxpool", "avgpool"], width=13)
         layer_type_cb.set("Dense")
         layer_type_cb.grid(row=0, column=0, padx=5)
         units_entry = ttk.Entry(row_frame, width=15)
         units_entry.grid(row=0, column=1, padx=5)
         kernel_entry = ttk.Entry(row_frame, width=15)
         kernel_entry.grid(row=0, column=2, padx=5)
-        activation_cb = ttk.Combobox(row_frame, values=["relu", "tanh", "sigmoid"], width=13)
+        activation_cb = ttk.Combobox(row_frame, values=["relu", "tanh", "sigmoid", "softmax", "leakyrelu"], width=13)
         activation_cb.set("relu")
         activation_cb.grid(row=0, column=3, padx=5)
         remove_btn = ttk.Button(row_frame, text="Supprimer", command=lambda: self.remove_disc_layer(row_frame))
@@ -164,7 +164,7 @@ class GanConfigurator:
         for (_, layer_type_cb, units_entry, kernel_entry, activation_cb) in self.disc_layer_rows:
             layer_type = layer_type_cb.get()
             units = units_entry.get()
-            kernel = kernel_entry.get() if layer_type == "Convolution" else "N/A"
+            kernel = kernel_entry.get() # if layer_type == "Convolution" else "N/A"
             layer_activation = activation_cb.get()
             summary += f"- {layer_type}: Units/Filters = {units}, Kernel Size = {kernel}, Activation = {layer_activation}\n"
         global_act = self.disc_global_activation.get()
@@ -177,32 +177,65 @@ class GanConfigurator:
         frame = self.train_frame
         ttk.Label(frame, text="Paramètres d'Entraînement", font=("Arial", 14)).pack(pady=10)
         
+        # Conteneur pour les paramètres des deux réseaux
+        params_container = ttk.Frame(frame)
+        params_container.pack(pady=10)
+
+        # ------------------ Paramètres Générateur ------------------
+        gen_frame = ttk.LabelFrame(params_container, text="Paramètres du Générateur")
+        gen_frame.grid(row=0, column=0, padx=10, pady=5, sticky="nsew")
+
+        ttk.Label(gen_frame, text="Fonction de perte :").pack(pady=5)
+        self.gen_loss_function = ttk.Combobox(gen_frame, values=["MSELoss", "BCEWithLogitsLoss", "CrossEntropyLoss"], width=15)
+        self.gen_loss_function.set("MSELoss")
+        self.gen_loss_function.pack(pady=5)
+
+        ttk.Label(gen_frame, text="Learning Rate :").pack(pady=5)
+        self.gen_learning_rate_entry = ttk.Entry(gen_frame, width=10)
+        self.gen_learning_rate_entry.insert(0, "0.001")
+        self.gen_learning_rate_entry.pack(pady=5)
+
+        ttk.Label(gen_frame, text="Nombre d'epochs :").pack(pady=5)
+        self.gen_epochs_entry = ttk.Entry(gen_frame, width=10)
+        self.gen_epochs_entry.insert(0, "10")
+        self.gen_epochs_entry.pack(pady=5)
+
+        ttk.Label(gen_frame, text="Taille du batch :").pack(pady=5)
+        self.gen_batch_size_entry = ttk.Entry(gen_frame, width=10)
+        self.gen_batch_size_entry.insert(0, "32")
+        self.gen_batch_size_entry.pack(pady=5)
+
+        # ------------------ Paramètres Discriminateur ------------------
+        disc_frame = ttk.LabelFrame(params_container, text="Paramètres du Discriminateur")
+        disc_frame.grid(row=0, column=1, padx=10, pady=5, sticky="nsew")
+
+        ttk.Label(disc_frame, text="Fonction de perte :").pack(pady=5)
+        self.disc_loss_function = ttk.Combobox(disc_frame, values=["MSELoss", "BCEWithLogitsLoss", "CrossEntropyLoss"], width=15)
+        self.disc_loss_function.set("MSELoss")
+        self.disc_loss_function.pack(pady=5)
+
+        ttk.Label(disc_frame, text="Learning Rate :").pack(pady=5)
+        self.disc_learning_rate_entry = ttk.Entry(disc_frame, width=10)
+        self.disc_learning_rate_entry.insert(0, "0.001")
+        self.disc_learning_rate_entry.pack(pady=5)
+
+        ttk.Label(disc_frame, text="Nombre d'epochs :").pack(pady=5)
+        self.disc_epochs_entry = ttk.Entry(disc_frame, width=10)
+        self.disc_epochs_entry.insert(0, "10")
+        self.disc_epochs_entry.pack(pady=5)
+
+        ttk.Label(disc_frame, text="Taille du batch :").pack(pady=5)
+        self.disc_batch_size_entry = ttk.Entry(disc_frame, width=10)
+        self.disc_batch_size_entry.insert(0, "32")
+        self.disc_batch_size_entry.pack(pady=5)
+
+        # ------------------ Contrôles communs ------------------
         ttk.Label(frame, text="Réseau à entraîner :").pack(pady=5)
         self.train_choice = tk.StringVar(value="Générateur")
         choice_frame = ttk.Frame(frame)
         choice_frame.pack()
         ttk.Radiobutton(choice_frame, text="Générateur", variable=self.train_choice, value="Générateur").pack(side="left", padx=10)
         ttk.Radiobutton(choice_frame, text="Discriminateur", variable=self.train_choice, value="Discriminateur").pack(side="left", padx=10)
-        
-        ttk.Label(frame, text="Fonction de perte :").pack(pady=5)
-        self.loss_function = ttk.Combobox(frame, values=["MSELoss", "BCEWithLogitsLoss", "CrossEntropyLoss"], width=15)
-        self.loss_function.set("MSELoss")
-        self.loss_function.pack(pady=5)
-        
-        ttk.Label(frame, text="Learning Rate :").pack(pady=5)
-        self.learning_rate_entry = ttk.Entry(frame, width=10)
-        self.learning_rate_entry.insert(0, "0.001")
-        self.learning_rate_entry.pack(pady=5)
-        
-        ttk.Label(frame, text="Nombre d'epochs :").pack(pady=5)
-        self.epochs_entry = ttk.Entry(frame, width=10)
-        self.epochs_entry.insert(0, "10")
-        self.epochs_entry.pack(pady=5)
-        
-        ttk.Label(frame, text="Taille du batch :").pack(pady=5)
-        self.batch_size_entry = ttk.Entry(frame, width=10)
-        self.batch_size_entry.insert(0, "32")
-        self.batch_size_entry.pack(pady=5)
         
         data_frame = ttk.Frame(frame)
         data_frame.pack(pady=10)
@@ -225,6 +258,12 @@ class GanConfigurator:
         
         self.training_stats_text = tk.Text(frame, height=8, width=80)
         self.training_stats_text.pack(pady=5)
+
+        # Ajout de boutons pour sauvegarder et charger les modèles
+        save_load_frame = ttk.Frame(frame)
+        save_load_frame.pack(pady=10)
+        ttk.Button(save_load_frame, text="Sauvegarder le modèle", command=self.save_model).pack(side="left", padx=5)
+        ttk.Button(save_load_frame, text="Charger le modèle", command=self.load_model).pack(side="left", padx=5)
     
     def select_data_folder(self):
         folder = filedialog.askdirectory(title="Sélectionner le dossier de données")
@@ -244,9 +283,19 @@ class GanConfigurator:
     def switch_training(self):
         if self.gan_controller:
             self.gan_controller.switch_network()
-            self.training_stats_text.insert(tk.END, "Switch effectué : changement du réseau à entraîner.\n")
+             # Mise à jour de l'interface pour refléter le changement
+            current_choice = self.train_choice.get()
+            new_choice = "Discriminateur" if current_choice == "Générateur" else "Générateur"
+            self.train_choice.set(new_choice)
+
+            self.training_stats_text.insert(tk.END, f"Switch effectué : entraînement du {new_choice}.\n")
     
     def start_training(self):
+        # Vérifier que le dossier de données est sélectionné
+        if self.data_folder.get() == "Aucun dossier sélectionné":
+            messagebox.showerror("Erreur", "Veuillez sélectionner un dossier de données.")
+            return
+        
         # Récupération de la configuration du Générateur
         gen_config = {}
         try:
@@ -258,7 +307,7 @@ class GanConfigurator:
                 layer = {
                     "layer_type": layer_type_cb.get(),
                     "units": int(units_entry.get()),
-                    "kernel_size": int(kernel_entry.get()) if layer_type_cb.get() == "Convolution" and kernel_entry.get() != "" else None,
+                    "kernel_size": int(kernel_entry.get()) if kernel_entry.get() != "" else None,
                     "activation": activation_cb.get()
                 }
                 layers.append(layer)
@@ -270,7 +319,7 @@ class GanConfigurator:
         # Récupération de la configuration du Discriminateur
         disc_config = {}
         try:
-            disc_config["input_size"] = 64  # correspond à la sortie du générateur
+            disc_config["input_size"] = (64,64)  # correspond à la sortie du générateur
             disc_config["output_size"] = 1
             disc_config["global_activation"] = self.disc_global_activation.get()
             layers = []
@@ -278,7 +327,7 @@ class GanConfigurator:
                 layer = {
                     "layer_type": layer_type_cb.get(),
                     "units": int(units_entry.get()),
-                    "kernel_size": int(kernel_entry.get()) if layer_type_cb.get() == "Convolution" and kernel_entry.get() != "" else None,
+                    "kernel_size": int(kernel_entry.get()) if kernel_entry.get() != "" else None,
                     "activation": activation_cb.get()
                 }
                 layers.append(layer)
@@ -290,11 +339,23 @@ class GanConfigurator:
         # Configuration d'entraînement
         training_config = {}
         try:
-            training_config["learning_rate"] = float(self.learning_rate_entry.get())
-            training_config["epochs"] = int(self.epochs_entry.get())
-            training_config["batch_size"] = int(self.batch_size_entry.get())
+            training_config["generator"] = {
+                "loss_function": self.gen_loss_function.get(),
+                "learning_rate": float(self.gen_learning_rate_entry.get()),
+                "epochs": int(self.gen_epochs_entry.get()),
+                "batch_size": int(self.gen_batch_size_entry.get())
+            }
+            
+            training_config["discriminator"] = {
+                "loss_function": self.disc_loss_function.get(),
+                "learning_rate": float(self.disc_learning_rate_entry.get()),
+                "epochs": int(self.disc_epochs_entry.get()),
+                "batch_size": int(self.disc_batch_size_entry.get())
+            }
+            
             training_config["data_folder"] = self.data_folder.get()
-            training_config["initial_network"] = self.train_choice.get().lower()  # "générateur" ou "discriminateur"
+            training_config["initial_network"] = self.train_choice.get().lower()
+            
         except Exception as e:
             messagebox.showerror("Erreur", "Erreur dans la configuration d'entraînement: " + str(e))
             return
@@ -309,6 +370,19 @@ class GanConfigurator:
         
         # Démarrage de l'entraînement dans un thread via le contrôleur
         self.gan_controller.start_training(training_callback)
+
+    def save_model(self):
+        if self.gan_controller:
+            file_path = filedialog.asksaveasfilename(defaultextension=".pth", filetypes=[("PyTorch model", "*.pth")])
+            if file_path:
+                self.gan_controller.save_model(file_path)
+                messagebox.showinfo("Sauvegarde", "Modèle sauvegardé avec succès!")
+
+    def load_model(self):
+        file_path = filedialog.askopenfilename(filetypes=[("PyTorch model", "*.pth")])
+        if file_path:
+            self.gan_controller.load_model(file_path)
+            messagebox.showinfo("Chargement", "Modèle chargé avec succès!")
     
     # ---------------------- Onglet Résumé de la Configuration ----------------------
     def build_summary_tab(self):
@@ -318,13 +392,18 @@ class GanConfigurator:
         self.summary_text.pack(pady=10)
         summary_btn = ttk.Button(frame, text="Générer le Résumé", command=self.generate_summary)
         summary_btn.pack(pady=5)
+        # Ajout d'une zone pour afficher les images générées
+        self.generated_images_frame = ttk.Frame(frame)
+        self.generated_images_frame.pack(pady=10)
+        self.generated_images_label = ttk.Label(self.generated_images_frame, text="Images générées")
+        self.generated_images_label.pack()
     
     def generate_summary(self):
         summary = "=== Générateur ===\n"
         for (_, layer_type_cb, units_entry, kernel_entry, activation_cb) in self.gen_layer_rows:
             layer_type = layer_type_cb.get()
             units = units_entry.get()
-            kernel = kernel_entry.get() if layer_type == "Convolution" else "N/A"
+            kernel = kernel_entry.get() # if layer_type == "Convolution" else "N/A"
             layer_activation = activation_cb.get()
             summary += f"{layer_type}: Units/Filters = {units}, Kernel Size = {kernel}, Activation = {layer_activation}\n"
         summary += f"Activation globale Générateur : {self.gen_global_activation.get()}\n\n"
@@ -332,16 +411,22 @@ class GanConfigurator:
         for (_, layer_type_cb, units_entry, kernel_entry, activation_cb) in self.disc_layer_rows:
             layer_type = layer_type_cb.get()
             units = units_entry.get()
-            kernel = kernel_entry.get() if layer_type == "Convolution" else "N/A"
+            kernel = kernel_entry.get() # if layer_type == "Convolution" else "N/A"
             layer_activation = activation_cb.get()
             summary += f"{layer_type}: Units/Filters = {units}, Kernel Size = {kernel}, Activation = {layer_activation}\n"
         summary += f"Activation globale Discriminateur : {self.disc_global_activation.get()}\n\n"
         summary += "=== Paramètres d'Entraînement ===\n"
         summary += f"Réseau à entraîner : {self.train_choice.get()}\n"
-        summary += f"Fonction de perte : {self.loss_function.get()}\n"
-        summary += f"Learning Rate : {self.learning_rate_entry.get()}\n"
-        summary += f"Nombre d'epochs : {self.epochs_entry.get()}\n"
-        summary += f"Taille du batch : {self.batch_size_entry.get()}\n"
+        summary += "- Générateur:\n"
+        summary += f"  Fonction de perte : {self.gen_loss_function.get()}\n"
+        summary += f"  Learning Rate : {self.gen_learning_rate_entry.get()}\n"
+        summary += f"  Nombre d'epochs : {self.gen_epochs_entry.get()}\n"
+        summary += f"  Taille du batch : {self.gen_batch_size_entry.get()}\n"
+        summary += "- Discriminateur:\n"
+        summary += f"  Fonction de perte : {self.disc_loss_function.get()}\n"
+        summary += f"  Learning Rate : {self.disc_learning_rate_entry.get()}\n"
+        summary += f"  Nombre d'epochs : {self.disc_epochs_entry.get()}\n"
+        summary += f"  Taille du batch : {self.disc_batch_size_entry.get()}\n"
         summary += f"Dossier de données : {self.data_folder.get()}\n"
         self.summary_text.delete("1.0", tk.END)
         self.summary_text.insert(tk.END, summary)
